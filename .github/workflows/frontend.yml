@@ -13,6 +13,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
 
     steps:
       - name: Checkout repository
@@ -21,25 +24,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('apps/frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install
-        working-directory: apps/frontend
 
       - name: Lint code
         run: npm run lint
-        working-directory: apps/frontend
 
       - name: Build application
         run: npm run build
-        working-directory: apps/frontend
+
