@@ -10,7 +10,6 @@ import {
 
 import { CertificateData, ContractCertificate } from "../types/certificates.types";
 import { sorobanServer } from "@/components/core/config/stellar/stellar";
-import { parseCertificateAsset } from "../utils/certificate.utils";
 
 export const issueCertificateOnChain = async (
   certData: CertificateData
@@ -23,14 +22,21 @@ export const issueCertificateOnChain = async (
   }
 
   const account = await sorobanServer.getAccount(certData.issuerAddress);
-  const parsedScVal = parseCertificateAsset(certData);
 
-  // Build the operation to call `create_certificate` function
+  const certIdVal = StellarSDK.nativeToScVal(certData.certificateId, {
+    type: "string",
+  });
+  const ownerVal = new StellarSDK.Address(certData.metadata.to).toScVal();
+  const metadataHashVal = StellarSDK.nativeToScVal(
+    certData.metadata.certificateHash,
+    { type: "string" }
+  );
+
   const operation = buildCertificateInvokeOperation(
     contractId,
     wasmHash,
-    "create_certificate", // Entrypoint
-    [parsedScVal]         // Arguments
+    "issue_certificate",
+    [certIdVal, ownerVal, metadataHashVal]
   );
 
   // Build transaction
