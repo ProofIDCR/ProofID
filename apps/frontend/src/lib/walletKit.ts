@@ -1,4 +1,4 @@
-import { WalletsKit, FreighterWallet } from "stellar-wallets-kit"
+import { WalletsKit, FreighterWallet } from "@creit.tech/stellar-wallets-kit"
 
 let kit: WalletsKit | null = null
 
