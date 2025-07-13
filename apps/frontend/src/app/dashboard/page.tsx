@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   ArrowLeft,
   CheckCircle,
@@ -13,15 +15,28 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+interface CertificateData {
+  studentName: string
+  program: string
+  date: string
+  signed: boolean
+}
+
 interface FlowState {
   step: number
   certId?: string
+  certificate?: CertificateData
 }
 
 export default function CredentialDashboard() {
   const [activeTab, setActiveTab] = useState("universidad")
   const [walletConnected, setWalletConnected] = useState(false)
   const [userAddress, setUserAddress] = useState("")
+  const [certForm, setCertForm] = useState({
+    studentName: "",
+    program: "",
+    date: "",
+  })
   const [flow, setFlow] = useState<FlowState>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("certFlow")
@@ -43,9 +58,12 @@ export default function CredentialDashboard() {
     setWalletConnected(true)
   }
 
-  const requestCertificate = () => setFlow({ step: 1 })
-  const createCertificate = () => setFlow({ step: 2, certId: "cert_" + Date.now() })
-  const signCertificate = () => setFlow((f) => ({ ...f, step: 3 }))
+  const requestCertificate = () =>
+    setFlow({ step: 1, certificate: { ...certForm, signed: false } })
+  const createCertificate = () =>
+    setFlow((f) => ({ ...f, step: 2, certId: "cert_" + Date.now() }))
+  const signCertificate = () =>
+    setFlow((f) => ({ ...f, step: 3, certificate: { ...f.certificate!, signed: true } }))
   const receiveCertificate = () => setFlow((f) => ({ ...f, step: 4 }))
   const deliverCertificate = () => setFlow((f) => ({ ...f, step: 5 }))
 
@@ -58,15 +76,55 @@ export default function CredentialDashboard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {flow.step === 0 && (
-          <Button onClick={requestCertificate}>Solicitar certificado</Button>
+          <>
+            <div className="space-y-2">
+              <Label>Nombre del estudiante</Label>
+              <Input
+                value={certForm.studentName}
+                onChange={(e) => setCertForm({ ...certForm, studentName: e.target.value })}
+              />
+              <Label>Programa</Label>
+              <Input
+                value={certForm.program}
+                onChange={(e) => setCertForm({ ...certForm, program: e.target.value })}
+              />
+              <Label>Fecha de emisión</Label>
+              <Input
+                type="date"
+                value={certForm.date}
+                onChange={(e) => setCertForm({ ...certForm, date: e.target.value })}
+              />
+            </div>
+            <Button onClick={requestCertificate}>Solicitar certificado</Button>
+          </>
         )}
-        {flow.step > 0 && flow.step < 5 && (
-          <p className="text-gray-700">Proceso en curso...</p>
-        )}
-        {flow.step === 5 && (
-          <p className="flex items-center text-green-600 font-medium">
-            <CheckCircle className="w-4 h-4 mr-2" /> Certificado verificado
-          </p>
+        {flow.step > 0 && (
+          <div className="space-y-2">
+            {flow.certificate && (
+              <>
+                <p>
+                  <span className="font-medium">Estudiante:</span> {flow.certificate.studentName}
+                </p>
+                <p>
+                  <span className="font-medium">Programa:</span> {flow.certificate.program}
+                </p>
+                <p>
+                  <span className="font-medium">Fecha:</span> {flow.certificate.date}
+                </p>
+                {flow.certificate.signed && (
+                  <p className="flex items-center text-green-600">
+                    <CheckCircle className="w-4 h-4 mr-2" /> Certificado firmado
+                  </p>
+                )}
+              </>
+            )}
+            {flow.step < 5 && <p className="text-gray-700">Proceso en curso...</p>}
+            {flow.step === 5 && (
+              <p className="flex items-center text-green-600 font-medium">
+                <CheckCircle className="w-4 h-4 mr-2" /> Certificado verificado
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -80,9 +138,30 @@ export default function CredentialDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {flow.step === 1 && <Button onClick={createCertificate}>Crear certificado</Button>}
+        {flow.step === 0 && <p className="text-gray-700">Esperando solicitud de universidad</p>}
+        {flow.step === 1 && (
+          <div className="space-y-2">
+            {flow.certificate && (
+              <>
+                <p className="text-sm text-gray-600">Estudiante: {flow.certificate.studentName}</p>
+                <p className="text-sm text-gray-600">Programa: {flow.certificate.program}</p>
+                <p className="text-sm text-gray-600">Fecha: {flow.certificate.date}</p>
+              </>
+            )}
+            <Button onClick={createCertificate}>Crear certificado</Button>
+          </div>
+        )}
         {flow.step === 2 && (
-          <p className="text-gray-700">Certificado {flow.certId} esperando firma del estudiante</p>
+          <div className="space-y-2">
+            <p className="text-gray-700">Certificado {flow.certId} esperando firma del estudiante</p>
+            {flow.certificate && (
+              <>
+                <p className="text-sm text-gray-600">Estudiante: {flow.certificate.studentName}</p>
+                <p className="text-sm text-gray-600">Programa: {flow.certificate.program}</p>
+                <p className="text-sm text-gray-600">Fecha: {flow.certificate.date}</p>
+              </>
+            )}
+          </div>
         )}
         {flow.step === 3 && <Button onClick={receiveCertificate}>Recibir certificado firmado</Button>}
         {flow.step === 4 && <Button onClick={deliverCertificate}>Entregar certificado</Button>}
@@ -91,7 +170,6 @@ export default function CredentialDashboard() {
             <CheckCircle className="w-4 h-4 mr-2" />Certificado entregado
           </p>
         )}
-        {flow.step === 0 && <p className="text-gray-700">Esperando solicitud de universidad</p>}
       </CardContent>
     </Card>
   )
@@ -104,10 +182,22 @@ export default function CredentialDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {flow.certificate && (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">Estudiante: {flow.certificate.studentName}</p>
+            <p className="text-sm text-gray-600">Programa: {flow.certificate.program}</p>
+            <p className="text-sm text-gray-600">Fecha: {flow.certificate.date}</p>
+          </div>
+        )}
         {flow.step === 2 && flow.certId && (
           <Button onClick={signCertificate}>Firmar {flow.certId}</Button>
         )}
-        {flow.step !== 2 && <p className="text-gray-700">Sin acciones pendientes</p>}
+        {flow.step > 2 && flow.certificate?.signed && (
+          <p className="flex items-center text-green-600 font-medium">
+            <CheckCircle className="w-4 h-4 mr-2" /> Certificado firmado
+          </p>
+        )}
+        {flow.step < 2 && <p className="text-gray-700">Sin acciones pendientes</p>}
       </CardContent>
     </Card>
   )
