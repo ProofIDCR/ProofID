@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { getWalletKit } from "@/lib/walletKit"
 
 interface Credential {
   id: string
@@ -82,10 +83,17 @@ export default function CredentialDashboard() {
   })
 
   const connectWallet = async () => {
-    const mockAddress = "0x" + Math.random().toString(16).substr(2, 8) + "..." + Math.random().toString(16).substr(2, 4)
-    setUserAddress(mockAddress)
-    setWalletConnected(true)
-    toast.success(`Wallet connected successfully to ${mockAddress}`)
+    try {
+      const kit = getWalletKit()
+      const wallet = await kit.connect()
+      if (wallet && wallet.publicKey) {
+        setUserAddress(wallet.publicKey)
+        setWalletConnected(true)
+        toast.success(`Wallet connected successfully to ${wallet.publicKey}`)
+      }
+    } catch (e) {
+      toast.error("Failed to connect wallet")
+    }
   }
 
   const issueCredential = async () => {
