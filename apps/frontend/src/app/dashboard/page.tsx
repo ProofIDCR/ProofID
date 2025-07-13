@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useWallet } from "@/components/auth/hooks/useWallet.hook"
+import { useGlobalAuthenticationStore } from "@/components/auth/store/data"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +16,10 @@ import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, CheckCircle, FileText, Sparkles, Hash, Clock, Shield, Building, UserCheck } from "lucide-react"
 import Link from "next/link"
 import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service"
+import { signTransaction } from "@stellar/freighter-api"
+import { buildCertificateTransaction } from "@/components/lib/stellar"
+import { sorobanServer } from "@/components/core/config/stellar/stellar"
+import { WalletNetwork } from "@creit.tech/stellar-wallets-kit"
 
 
 interface CertificateMetadata {
@@ -61,15 +67,15 @@ interface FlowState {
 
 export default function CredentialDashboard() {
   const [activeTab, setActiveTab] = useState("issuer")
-  const [walletConnected, setWalletConnected] = useState(false)
-  const [userAddress, setUserAddress] = useState("")
+  const { handleConnect, handleDisconnect } = useWallet()
+  const address = useGlobalAuthenticationStore((state) => state.address)
   const [certificateForm, setCertificateForm] = useState<CertificateData>({
     certificateId: "",
     certificateType: "",
     issueDate: new Date().toISOString().split("T")[0],
     description: "",
     issuerName: "",
-    issuerAddress: "0x1234...5678", // Mock issuer address
+    issuerAddress: address || "",
     issuerContact: "",
     metadata: {
       to: "",
@@ -87,6 +93,18 @@ export default function CredentialDashboard() {
     }
     return { step: 0 }
   })
+
+  useEffect(() => {
+    if (address) {
+      setCertificateForm((prev) => ({
+        ...prev,
+        issuerAddress: address,
+        metadata: { ...prev.metadata, to: prev.metadata.to || address },
+      }))
+    } else {
+      setCertificateForm((prev) => ({ ...prev, issuerAddress: "" }))
+    }
+  }, [address])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -108,29 +126,17 @@ export default function CredentialDashboard() {
     return "0x" + btoa(metadataString).slice(0, 32) + "..." + btoa(metadataString).slice(-8)
   }
 
-  const connectWallet = () => {
-    const mockAddress = "0x" + Math.random().toString(16).substr(2, 8) + "..." + Math.random().toString(16).substr(2, 4)
-    setUserAddress(mockAddress)
-    setWalletConnected(true)
-
-    // Actualizar metadata con la dirección del usuario
-    setCertificateForm((prev) => ({
-      ...prev,
-      metadata: {
-        ...prev.metadata,
-        to: mockAddress,
-      },
-    }))
-  }
 
   const requestCertificate = async () => {
     const certId = certificateForm.certificateId || "CERT-" + Date.now()
 
     const updatedCertData = {
       ...certificateForm,
+      issuerAddress: address,
       certificateId: certId,
       metadata: {
         ...certificateForm.metadata,
+        to: certificateForm.metadata.to || address,
         certificateHash: generateMetadataHash(certificateForm),
       },
     }
@@ -173,7 +179,7 @@ export default function CredentialDashboard() {
     }))
   }
 
-  const signCertificate = () => {
+  const signCertificate = async () => {
     const signedAt = new Date().toLocaleString("es-ES", {
       year: "numeric",
       month: "long",
@@ -182,8 +188,21 @@ export default function CredentialDashboard() {
       minute: "2-digit",
     })
 
-    // Simular transacción blockchain
-    const mockTxId = "0x" + Math.random().toString(16).substr(2, 16)
+    let txHash = ""
+    try {
+      if (address) {
+        const account = await sorobanServer.getAccount(address)
+        const tx = buildCertificateTransaction(account, [])
+        const prepared = await sorobanServer.prepareTransaction(tx)
+        const { signedTxXdr } = await signTransaction(prepared.toXDR(), {
+          address,
+          networkPassphrase: WalletNetwork.TESTNET,
+        })
+        txHash = signedTxXdr.slice(0, 32)
+      }
+    } catch (e) {
+      console.error("Failed to sign certificate", e)
+    }
 
     setFlow((prev) => ({
       ...prev,
@@ -201,7 +220,7 @@ export default function CredentialDashboard() {
             ...prev.certificateData,
             metadata: {
               ...prev.certificateData.metadata,
-              blockchainTxId: mockTxId,
+              blockchainTxId: txHash,
             },
           }
         : undefined,
@@ -226,6 +245,7 @@ export default function CredentialDashboard() {
     return (
       certificateForm.certificateType.trim() !== "" &&
       certificateForm.issuerName.trim() !== "" &&
+      certificateForm.issuerAddress.trim() !== "" &&
       certificateForm.metadata.to.trim() !== "" &&
       certificateForm.metadata.action.trim() !== ""
     )
@@ -265,6 +285,8 @@ export default function CredentialDashboard() {
                     value={certificateForm.issuerAddress}
                     onChange={(e) => handleFormChange("issuerAddress", e.target.value)}
                     placeholder="0x..."
+                    readOnly
+                    disabled={!address}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -596,18 +618,22 @@ export default function CredentialDashboard() {
               </h1>
             </div>
           </div>
-          {!walletConnected ? (
+          {!address ? (
             <Button
-              onClick={connectWallet}
+              onClick={handleConnect}
               className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white shadow-lg"
             >
               Connect Wallet
             </Button>
           ) : (
-            <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-xl border-2 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-green-700 text-sm font-medium">{userAddress}</span>
-            </div>
+            <Button
+              onClick={handleDisconnect}
+              variant="outline"
+              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {address.slice(0, 6)}...{address.slice(-4)}
+            </Button>
           )}
         </div>
 
