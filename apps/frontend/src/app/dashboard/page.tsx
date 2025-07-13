@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import WalletConnector from "@/components/wallet/WalletConnector"
+import { useWalletStore } from "@/stores/wallet"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Shield,
   CheckCircle,
-  Wallet,
   Key,
   FileText,
   Plus,
@@ -70,8 +71,7 @@ export default function CredentialDashboard() {
     },
   ])
 
-  const [walletConnected, setWalletConnected] = useState(false)
-  const [userAddress, setUserAddress] = useState("")
+  const { connected, publicKey } = useWalletStore()
   const [activeTab, setActiveTab] = useState("dashboard")
   const [issuanceForm, setIssuanceForm] = useState({
     userAddress: "",
@@ -81,12 +81,6 @@ export default function CredentialDashboard() {
     credentialId: "",
   })
 
-  const connectWallet = async () => {
-    const mockAddress = "0x" + Math.random().toString(16).substr(2, 8) + "..." + Math.random().toString(16).substr(2, 4)
-    setUserAddress(mockAddress)
-    setWalletConnected(true)
-    toast.success(`Wallet connected successfully to ${mockAddress}`)
-  }
 
   const issueCredential = async () => {
     const newCredential: Credential = {
@@ -185,20 +179,15 @@ export default function CredentialDashboard() {
           </div>
 
           {/* Wallet Status */}
-          {!walletConnected ? (
-            <Button
-              onClick={connectWallet}
-              className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white shadow-lg"
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
-            </Button>
-          ) : (
-            <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-xl border-2 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-green-700 text-sm font-medium">{userAddress}</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            {connected && (
+              <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-xl border-2 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-green-700 text-sm font-medium">{publicKey}</span>
+              </div>
+            )}
+            <WalletConnector />
+          </div>
         </div>
 
         {/* Main Content */}
