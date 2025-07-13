@@ -8,11 +8,18 @@ import {
   signAndSubmitCertificateTx,
 } from "@/components/lib/stellar"
 
-import { CertificateData, ContractCertificate } from "../types/certificates.types";
+import { ContractCertificate } from "../types/certificates.types";
 import { sorobanServer } from "@/components/core/config/stellar/stellar";
 
+export interface IssueCertificateParams {
+  certId: string
+  owner: string
+  metadataHash: string
+  issuerAddress: string
+}
+
 export const issueCertificateOnChain = async (
-  certData: CertificateData
+  params: IssueCertificateParams
 ): Promise<ContractCertificate> => {
   const wasmHash = process.env.NEXT_PUBLIC_WASM_HASH;
   const contractId = process.env.NEXT_PUBLIC_CONTRACT_ID;
@@ -21,16 +28,13 @@ export const issueCertificateOnChain = async (
     throw new Error("Missing environment variables: WASM_HASH or CONTRACT_ID");
   }
 
-  const account = await sorobanServer.getAccount(certData.issuerAddress);
+  const account = await sorobanServer.getAccount(params.issuerAddress);
 
-  const certIdVal = StellarSDK.nativeToScVal(certData.certificateId, {
+  const certIdVal = StellarSDK.nativeToScVal(params.certId, { type: "string" });
+  const ownerVal = new StellarSDK.Address(params.owner).toScVal();
+  const metadataHashVal = StellarSDK.nativeToScVal(params.metadataHash, {
     type: "string",
   });
-  const ownerVal = new StellarSDK.Address(certData.metadata.to).toScVal();
-  const metadataHashVal = StellarSDK.nativeToScVal(
-    certData.metadata.certificateHash,
-    { type: "string" }
-  );
 
   const operation = buildCertificateInvokeOperation(
     contractId,
@@ -45,23 +49,23 @@ export const issueCertificateOnChain = async (
   // Prepare and sign
   const preparedTx = await sorobanServer.prepareTransaction(transaction);
   const { signedTxXdr } = await signTransaction(preparedTx.toXDR(), {
-    address: certData.issuerAddress,
+    address: params.issuerAddress,
     networkPassphrase: WalletNetwork.TESTNET,
   });
 
   // Send and wait for confirmation
   await signAndSubmitCertificateTx(
     preparedTx,
-    StellarSDK.Keypair.fromPublicKey(certData.issuerAddress), // For type compatibility only
+    StellarSDK.Keypair.fromPublicKey(params.issuerAddress),
     sorobanServer,
-    false // Already prepared, no need to re-prepare
+    false
   );
 
   return {
-    id: certData.certificateId,
-    owner: certData.metadata.to,
-    metadataHash: certData.metadata.certificateHash,
-    issuedBy: certData.issuerAddress,
+    id: params.certId,
+    owner: params.owner,
+    metadataHash: params.metadataHash,
+    issuedBy: params.issuerAddress,
     timestamp: Date.now(),
     status: "pending",
   };
