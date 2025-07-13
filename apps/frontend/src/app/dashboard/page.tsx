@@ -43,28 +43,62 @@ interface Credential {
 export default function CredentialDashboard() {
   const [credentials, setCredentials] = useState<Credential[]>([
     {
-      id: "cred_001",
-      issuer: "TW Platform",
-      subject: "0x1234...5678",
-      type: "ActionCredential",
+      id: "step1",
+      issuer: "Universidad",
+      subject: "StarProof",
+      type: "ProcessStep",
       metadata: {
-        action: "task_completed",
-        timestamp: "2025-01-12T09:00:00Z",
-        expires: true,
-        expirationDate: "2025-08-01",
+        action: "request_certificate",
+        timestamp: "2025-05-01T09:00:00Z",
+        expires: false,
       },
       status: "valid",
     },
     {
-      id: "cred_002",
-      issuer: "Education Corp",
-      subject: "0x1234...5678",
-      type: "CertificationCredential",
+      id: "step2",
+      issuer: "StarProof",
+      subject: "Estudiante",
+      type: "ProcessStep",
       metadata: {
-        action: "course_finished",
-        timestamp: "2025-01-10T14:30:00Z",
-        expires: true,
-        expirationDate: "2026-01-10",
+        action: "create_certificate",
+        timestamp: "2025-05-01T10:00:00Z",
+        expires: false,
+      },
+      status: "valid",
+    },
+    {
+      id: "step3",
+      issuer: "Estudiante",
+      subject: "StarProof",
+      type: "ProcessStep",
+      metadata: {
+        action: "sign_certificate",
+        timestamp: "2025-05-01T11:00:00Z",
+        expires: false,
+      },
+      status: "valid",
+    },
+    {
+      id: "step4",
+      issuer: "StarProof",
+      subject: "StarProof",
+      type: "ProcessStep",
+      metadata: {
+        action: "receive_certificate",
+        timestamp: "2025-05-01T12:00:00Z",
+        expires: false,
+      },
+      status: "valid",
+    },
+    {
+      id: "step5",
+      issuer: "StarProof",
+      subject: "Universidad",
+      type: "ProcessStep",
+      metadata: {
+        action: "deliver_certificate",
+        timestamp: "2025-05-01T13:00:00Z",
+        expires: false,
       },
       status: "valid",
     },
@@ -146,6 +180,16 @@ export default function CredentialDashboard() {
 
   const getActionIcon = (action: string) => {
     switch (action) {
+      case "request_certificate":
+        return <FileText className="w-4 h-4 text-purple-600" />
+      case "create_certificate":
+        return <Plus className="w-4 h-4 text-purple-600" />
+      case "sign_certificate":
+        return <Shield className="w-4 h-4 text-purple-600" />
+      case "receive_certificate":
+        return <ArrowLeft className="w-4 h-4 text-purple-600" />
+      case "deliver_certificate":
+        return <Award className="w-4 h-4 text-purple-600" />
       case "task_completed":
         return <CheckCircle className="w-4 h-4 text-purple-600" />
       case "course_finished":
@@ -375,10 +419,11 @@ export default function CredentialDashboard() {
                       <SelectValue placeholder="Select action type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="task_completed">Task Completed</SelectItem>
-                      <SelectItem value="course_finished">Course Finished</SelectItem>
-                      <SelectItem value="certification_earned">Certification Earned</SelectItem>
-                      <SelectItem value="kyc_verified">KYC Verified</SelectItem>
+                      <SelectItem value="request_certificate">Solicitar Certificado</SelectItem>
+                      <SelectItem value="create_certificate">Crear Certificado</SelectItem>
+                      <SelectItem value="sign_certificate">Firmar Certificado</SelectItem>
+                      <SelectItem value="receive_certificate">Recibir Certificado</SelectItem>
+                      <SelectItem value="deliver_certificate">Entregar Certificado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
