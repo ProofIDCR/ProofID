@@ -13,6 +13,19 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, CheckCircle, FileText, Sparkles, Hash, Clock, Shield, Building, UserCheck } from "lucide-react"
 import Link from "next/link"
+import { useCertificateFlow } from "@/components/modules/certificate/hooks/useCertificateFlow"
+
+const {
+  step,
+  contractCertificate,
+  certificateData,
+  signedAt,
+  isSigned,
+  startCertificateIssuance,
+  verifyCertificate,
+  signCertificate,
+} = useCertificateFlow()
+
 
 interface CertificateMetadata {
   to: string // user_address
