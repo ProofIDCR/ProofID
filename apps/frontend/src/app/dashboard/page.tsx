@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { issueCertificate, getCertificateDetails } from "@/lib/soroban"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -89,45 +90,43 @@ export default function CredentialDashboard() {
   }
 
   const issueCredential = async () => {
-    const newCredential: Credential = {
-      id: `cred_${Date.now()}`,
-      issuer: "StarProof Platform",
-      subject: issuanceForm.userAddress,
-      type: "ActionCredential",
-      metadata: {
-        action: issuanceForm.actionType,
-        timestamp: new Date().toISOString(),
-        expires: true,
-        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      },
-      status: "valid",
+    const newId = `cred_${Date.now()}`
+    try {
+      await issueCertificate(newId, issuanceForm.userAddress, issuanceForm.actionType)
+      const newCredential: Credential = {
+        id: newId,
+        issuer: "StarProof Platform",
+        subject: issuanceForm.userAddress,
+        type: "ActionCredential",
+        metadata: {
+          action: issuanceForm.actionType,
+          timestamp: new Date().toISOString(),
+          expires: true,
+          expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+        },
+        status: "valid",
+      }
+
+      setCredentials([...credentials, newCredential])
+      setIssuanceForm({ userAddress: "", actionType: "" })
+      setActiveTab("dashboard")
+
+      toast.success(`Credential ${newCredential.id} issued successfully! 🎉`)
+    } catch (e) {
+      console.error(e)
+      toast.error("Failed to issue credential on-chain")
     }
-
-    setCredentials([...credentials, newCredential])
-    setIssuanceForm({ userAddress: "", actionType: "" })
-    setActiveTab("dashboard")
-
-    toast.success(`Credential ${newCredential.id} issued successfully! 🎉`)
   }
 
   const verifyCredential = async () => {
-    const credential = credentials.find((c) => c.id === verificationForm.credentialId)
-
-    if (!credential) {
-      toast.error("Credential not found. Please check the credential ID.")
-      return
-    }
-
-    const isValid =
-      credential.status === "valid" &&
-      (!credential.metadata.expires || new Date(credential.metadata.expirationDate!) > new Date())
-
-    if (isValid) {
-      toast.success(
-        `✅ Credential is valid! Issued by ${credential.issuer} • Valid until ${credential.metadata.expirationDate}`,
-      )
-    } else {
-      toast.error("❌ Credential is invalid, expired, or revoked.")
+    try {
+      const details = await getCertificateDetails(verificationForm.credentialId)
+      toast.success(`✅ Credential owned by ${details[0]}`)
+    } catch (e) {
+      console.error(e)
+      toast.error("Credential not found or invalid")
     }
   }
 
