@@ -128,6 +128,16 @@ export default function CredentialDashboard() {
 
 
   const requestCertificate = async () => {
+    if (!isFormValid()) {
+      window.alert("Please complete all required fields")
+      return
+    }
+
+    if (!address) {
+      await handleConnect()
+      return
+    }
+
     const certId = certificateForm.certificateId || "CERT-" + Date.now()
 
     const updatedCertData = {
@@ -245,7 +255,6 @@ export default function CredentialDashboard() {
     return (
       certificateForm.certificateType.trim() !== "" &&
       certificateForm.issuerName.trim() !== "" &&
-      certificateForm.issuerAddress.trim() !== "" &&
       certificateForm.metadata.to.trim() !== "" &&
       certificateForm.metadata.action.trim() !== ""
     )
