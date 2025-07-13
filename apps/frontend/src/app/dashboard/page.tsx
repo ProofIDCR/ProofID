@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { issueCertificate } from "@/lib/contract"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -89,23 +90,42 @@ export default function CredentialDashboard() {
   }
 
   const issueCredential = async () => {
+    const metadata = {
+      action: issuanceForm.actionType,
+      timestamp: new Date().toISOString(),
+      expires: true,
+      expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+    }
+
+    const json = JSON.stringify(metadata)
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(json),
+    )
+    const metadataHash = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+
     const newCredential: Credential = {
       id: `cred_${Date.now()}`,
       issuer: "StarProof Platform",
       subject: issuanceForm.userAddress,
       type: "ActionCredential",
-      metadata: {
-        action: issuanceForm.actionType,
-        timestamp: new Date().toISOString(),
-        expires: true,
-        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      },
+      metadata,
       status: "valid",
     }
 
     setCredentials([...credentials, newCredential])
     setIssuanceForm({ userAddress: "", actionType: "" })
     setActiveTab("dashboard")
+
+    try {
+      await issueCertificate(newCredential.subject, metadataHash)
+    } catch (e) {
+      console.error(e)
+    }
 
     toast.success(`Credential ${newCredential.id} issued successfully! 🎉`)
   }
