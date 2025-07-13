@@ -64,18 +64,22 @@ export function buildCertificateInvokeOperation(
  */
 export async function signAndSubmitCertificateTx(
   transaction: StellarSDK.Transaction,
-  keypair: StellarSDK.Keypair,
   server: StellarSDK.SorobanRpc.Server,
+  keypair?: StellarSDK.Keypair,
   shouldPrepare: boolean = true
 ): Promise<StellarSDK.rpc.Api.GetSuccessfulTransactionResponse> {
   let submission;
 
   if (shouldPrepare) {
     const preparedTx = await server.prepareTransaction(transaction);
-    preparedTx.sign(keypair);
+    if (keypair) {
+      preparedTx.sign(keypair);
+    }
     submission = await server.sendTransaction(preparedTx);
   } else {
-    transaction.sign(keypair);
+    if (keypair) {
+      transaction.sign(keypair);
+    }
     submission = await server.sendTransaction(transaction);
   }
 

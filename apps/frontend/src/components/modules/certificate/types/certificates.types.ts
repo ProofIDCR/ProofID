@@ -12,4 +12,4 @@ export interface ContractCertificate {
   issuedBy: string
   timestamp: number
 }
-  
+

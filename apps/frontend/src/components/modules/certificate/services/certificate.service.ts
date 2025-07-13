@@ -53,13 +53,13 @@ export const issueCertificateOnChain = async (
     networkPassphrase: WalletNetwork.TESTNET,
   });
 
-  // Send and wait for confirmation
-  await signAndSubmitCertificateTx(
-    preparedTx,
-    StellarSDK.Keypair.fromPublicKey(params.issuerAddress),
-    sorobanServer,
-    false
+  const signedTx = new StellarSDK.Transaction(
+    signedTxXdr,
+    WalletNetwork.TESTNET
   );
+
+  // Send and wait for confirmation
+  await signAndSubmitCertificateTx(signedTx, sorobanServer, undefined, false);
 
   return {
     id: params.certId,
