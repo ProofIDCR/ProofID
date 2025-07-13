@@ -13,18 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, CheckCircle, FileText, Sparkles, Hash, Clock, Shield, Building, UserCheck } from "lucide-react"
 import Link from "next/link"
-import { useCertificateFlow } from "@/components/modules/certificate/hooks/useCertificateFlow"
-
-const {
-  step,
-  contractCertificate,
-  certificateData,
-  signedAt,
-  isSigned,
-  startCertificateIssuance,
-  verifyCertificate,
-  signCertificate,
-} = useCertificateFlow()
+import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service"
 
 
 interface CertificateMetadata {
@@ -119,28 +108,6 @@ export default function CredentialDashboard() {
     return "0x" + btoa(metadataString).slice(0, 32) + "..." + btoa(metadataString).slice(-8)
   }
 
-  // Simular llamada al contrato: issue_certificate
-  const issueCertificateToContract = (certData: CertificateData): ContractCertificate => {
-    const certificateHash = generateMetadataHash(certData)
-    const contractCert: ContractCertificate = {
-      id: certData.certificateId,
-      owner: certData.metadata.to,
-      metadataHash: certificateHash,
-      status: "pending",
-      issuedBy: certData.issuerAddress,
-      timestamp: Date.now(),
-    }
-    return contractCert
-  }
-
-  // Simular llamada al contrato: get_certificate_details
-  const getCertificateDetails = (certId: string): ContractCertificate | null => {
-    if (flow.contractCertificate && flow.contractCertificate.id === certId) {
-      return flow.contractCertificate
-    }
-    return null
-  }
-
   const connectWallet = () => {
     const mockAddress = "0x" + Math.random().toString(16).substr(2, 8) + "..." + Math.random().toString(16).substr(2, 4)
     setUserAddress(mockAddress)
@@ -156,7 +123,7 @@ export default function CredentialDashboard() {
     }))
   }
 
-  const requestCertificate = () => {
+  const requestCertificate = async () => {
     const certId = certificateForm.certificateId || "CERT-" + Date.now()
 
     const updatedCertData = {
@@ -168,8 +135,21 @@ export default function CredentialDashboard() {
       },
     }
 
-    // Simular issue_certificate en el contrato
-    const contractCert = issueCertificateToContract(updatedCertData)
+    // Insertar certificado en el contrato
+    let contractCert: ContractCertificate
+    try {
+      contractCert = await issueCertificateOnChain(updatedCertData)
+    } catch (e) {
+      console.error("Failed to issue certificate on chain", e)
+      contractCert = {
+        id: updatedCertData.certificateId,
+        owner: updatedCertData.metadata.to,
+        metadataHash: updatedCertData.metadata.certificateHash,
+        issuedBy: updatedCertData.issuerAddress,
+        timestamp: Date.now(),
+        status: "pending",
+      }
+    }
 
     setFlow({
       step: 1,
