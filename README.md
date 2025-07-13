@@ -39,7 +39,6 @@ It combines Stellar’s low fees and fast settlement with W3C open standards to 
 | **Storage**                   | IPFS for VC hashes, Amazon S3 for optional metadata   |
 | **Frontend**                  | Next.js (React), Tailwind CSS, shadcn/ui, Stellar SDK |
 | **DevOps**                    | Docker, GitHub Actions CI/CD, Fly.io                  |
-| **Observability**             | Grafana, Prometheus                                   |
 
 ---
 
@@ -55,23 +54,8 @@ It combines Stellar’s low fees and fast settlement with W3C open standards to 
 
 ## Getting Started
 
-```bash
-# Requirements
-node --version   # >=18
-docker --version # Optional for local database
-
-# Clone the repo
-git clone https://github.com/your-org/starproof.git
-cd starproof
-
-# Install dependencies
-npm install
-
-# Environment variables
-cp .env.example .env    # Add Stellar keys and Supabase config
-
-# Start development mode
-npm run dev
+```
+Coming soon
 ```
 
 ---
