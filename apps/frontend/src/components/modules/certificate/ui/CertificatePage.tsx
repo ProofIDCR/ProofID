@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service";
-import { useScroll } from "framer-motion";
 import { CertificateCard } from "./CertificateCard";
 import StarsBackground from "../../background/StarsBackground";
 
@@ -37,10 +36,6 @@ export default function CredentialDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
