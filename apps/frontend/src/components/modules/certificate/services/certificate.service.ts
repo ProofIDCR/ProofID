@@ -85,3 +85,37 @@ export const issueCertificateOnChain = async (
     status: "pending",
   };
 };
+
+/**
+ * Verifica un certificado en la blockchain usando el contrato Soroban actualizado
+ */
+export const verifyCertificateOnChain = async ({
+  contractId,
+  certId,
+  metadataHash,
+}: {
+  contractId: string;
+  certId: string;
+  metadataHash: string;
+}): Promise<boolean> => {
+  const certIdVal = StellarSDK.nativeToScVal(certId, { type: "string" });
+  const metadataHashVal = StellarSDK.nativeToScVal(metadataHash, {
+    type: "string",
+  });
+
+  const contract = new StellarSDK.Contract(contractId);
+
+  const tx = contract.call("verify_certificate", certIdVal, metadataHashVal);
+
+  const simulation = await sorobanServer.simulateTransaction(tx, {
+    networkPassphrase: WalletNetwork.TESTNET,
+  });
+
+  const result = simulation.results?.[0].result;
+
+  if (!result) {
+    throw new Error("No result returned from contract simulation.");
+  }
+
+  return result.toBoolean();
+};
