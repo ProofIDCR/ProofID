@@ -1,5 +1,3 @@
-![Banner](https://placehold.co/1200x250?text=StarProof)
-
 # StarProof
 
 > **Verifiable credentials on Stellar with dynamic on-chain and off-chain badges**
