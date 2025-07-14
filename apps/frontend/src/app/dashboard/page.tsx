@@ -11,7 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
-import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service";
+import {
+  issueCertificateOnChain,
+  getCertificateDetails,
+  verifyCertificate,
+} from "@/components/modules/certificate/services/certificate.service";
 
 interface ContractCertificate {
   id: string;
@@ -34,6 +38,27 @@ export default function CredentialDashboard() {
 
   const [certificate, setCertificate] = useState<ContractCertificate>();
   const [error, setError] = useState<string | null>(null);
+
+  const verifyOnChain = async () => {
+    if (!certificate) return;
+
+    try {
+      const details = await getCertificateDetails(certificate.id);
+      const isValid = await verifyCertificate(
+        certificate.id,
+        certificate.metadataHash
+      );
+
+      setCertificate({
+        ...certificate,
+        owner: details.owner,
+        metadataHash: details.metadataHash,
+        status: isValid ? "issued" : "expired",
+      });
+    } catch (e) {
+      console.error("Verification error", e);
+    }
+  };
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -161,6 +186,9 @@ export default function CredentialDashboard() {
                 <Badge variant="outline" className="mt-2">
                   {certificate.status}
                 </Badge>
+                <Button onClick={verifyOnChain} size="sm" className="mt-2">
+                  Verify Certificate
+                </Button>
               </div>
             )}
           </CardContent>

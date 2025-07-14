@@ -85,3 +85,60 @@ export const issueCertificateOnChain = async (
     status: "pending",
   };
 };
+
+/**
+ * Obtiene los detalles de un certificado almacenado en el contrato
+ */
+export const getCertificateDetails = async (
+  certId: string
+): Promise<{ owner: string; metadataHash: string; isValid: boolean }> => {
+  const contractId = process.env.NEXT_PUBLIC_CONTRACT_ID;
+
+  if (!contractId) {
+    throw new Error("Missing environment variable: CONTRACT_ID");
+  }
+
+  const certIdVal = StellarSDK.nativeToScVal(certId, { type: "string" });
+
+  const contract = new StellarSDK.Contract(contractId);
+  const result = await contract.call(sorobanServer, "get_certificate_details", [
+    certIdVal,
+  ]);
+
+  const details = StellarSDK.scValToNative(result) as {
+    owner: StellarSDK.Address;
+    metadata_hash: string;
+    is_valid: boolean;
+  };
+
+  return {
+    owner: details.owner.toString(),
+    metadataHash: details.metadata_hash,
+    isValid: details.is_valid,
+  };
+};
+
+/**
+ * Verifica un certificado comparando su hash de metadatos
+ */
+export const verifyCertificate = async (
+  certId: string,
+  metadataHash: string
+): Promise<boolean> => {
+  const contractId = process.env.NEXT_PUBLIC_CONTRACT_ID;
+
+  if (!contractId) {
+    throw new Error("Missing environment variable: CONTRACT_ID");
+  }
+
+  const certIdVal = StellarSDK.nativeToScVal(certId, { type: "string" });
+  const hashVal = StellarSDK.nativeToScVal(metadataHash, { type: "string" });
+
+  const contract = new StellarSDK.Contract(contractId);
+  const result = await contract.call(sorobanServer, "verify_certificate", [
+    certIdVal,
+    hashVal,
+  ]);
+
+  return StellarSDK.scValToNative(result) as boolean;
+};

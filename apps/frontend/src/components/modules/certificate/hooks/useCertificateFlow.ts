@@ -1,7 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { issueCertificateOnChain } from "../services/certificate.service"
+import {
+  issueCertificateOnChain,
+  getCertificateDetails,
+  verifyCertificate as verifyCertificateOnChain,
+} from "../services/certificate.service"
 import { CertificateData, ContractCertificate } from "../types/certificates.types"
 
 export const useCertificateFlow = () => {
@@ -29,9 +33,22 @@ export const useCertificateFlow = () => {
     setStep(1)
   }
 
-  const verifyCertificate = () => {
-    if (!contractCertificate) return
-    setContractCertificate({ ...contractCertificate, status: "issued" })
+  const verifyCertificate = async () => {
+    if (!contractCertificate || !certId) return
+
+    const details = await getCertificateDetails(certId)
+    const isValid = await verifyCertificateOnChain(
+      certId,
+      contractCertificate.metadataHash
+    )
+
+    setContractCertificate({
+      ...contractCertificate,
+      owner: details.owner,
+      metadataHash: details.metadataHash,
+      status: isValid ? "issued" : "expired",
+    })
+
     setStep(2)
   }
 
