@@ -1,1 +1,1 @@
-# ProofID
+# StarProof

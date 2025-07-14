@@ -31,4 +31,3 @@ export interface CertificateMetadata {
     issuedBy: string
     timestamp: number
   }
-  
