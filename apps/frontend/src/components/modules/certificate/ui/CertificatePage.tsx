@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service";
-import { useScroll, useTransform } from "framer-motion";
+import { useScroll } from "framer-motion";
 import { CertificateCard } from "./CertificateCard";
 import StarsBackground from "../../background/StarsBackground";
 
@@ -41,7 +41,6 @@ export default function CredentialDashboard() {
     target: containerRef,
     offset: ["start start", "end end"],
   });
-  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, -100]);
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -50,13 +49,13 @@ export default function CredentialDashboard() {
   const issueCertificate = async () => {
     setError(null);
     if (!address) {
-      console.warn("⚠️ Wallet no conectada. Intentando conectar...");
+      console.warn("⚠️ Wallet not connected. Attempting to connect...");
       await handleConnect();
       return;
     }
     if (!form.owner || !form.metadataHash) {
       setError(
-        "⚠️ Debes ingresar todos los campos obligatorios (Owner y Metadata Hash)."
+        "⚠️ You must complete all required fields (Owner and Metadata Hash)."
       );
       return;
     }
@@ -69,13 +68,11 @@ export default function CredentialDashboard() {
       },
     };
     try {
-      console.log("🚀 Enviando parámetros a issueCertificateOnChain:", params);
       const issued = await issueCertificateOnChain(params);
-      console.log("✅ Certificado emitido correctamente:", issued);
       setCertificate(issued);
       setForm({ certId: "", owner: "", metadataHash: "" });
     } catch (e: unknown) {
-      console.error("❌ Ocurrió un error al emitir el certificado:", e);
+      console.error("❌ An error occurred while issuing the certificate:", e);
       if (
         e &&
         typeof e === "object" &&
@@ -84,7 +81,7 @@ export default function CredentialDashboard() {
       ) {
         setError(`📛 ${e.message}`);
       } else {
-        setError("📛 Error desconocido al emitir el certificado.");
+        setError("📛 Unknown error while issuing the certificate.");
       }
     }
   };
@@ -138,7 +135,7 @@ export default function CredentialDashboard() {
                 id="certId"
                 value={form.certId}
                 onChange={(e) => handleChange("certId", e.target.value)}
-                placeholder="Ej: CERT-001"
+                placeholder="e.g. CERT-001"
                 className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:ring-[#0066ff]"
               />
             </div>
@@ -150,7 +147,7 @@ export default function CredentialDashboard() {
                 id="owner"
                 value={form.owner}
                 onChange={(e) => handleChange("owner", e.target.value)}
-                placeholder="Ej: GC..."
+                placeholder="e.g. GC..."
                 className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:ring-[#0066ff]"
               />
             </div>
@@ -162,7 +159,7 @@ export default function CredentialDashboard() {
                 id="metadataHash"
                 value={form.metadataHash}
                 onChange={(e) => handleChange("metadataHash", e.target.value)}
-                placeholder="Ej: certificado-abc-hash"
+                placeholder="e.g. certificate-abc-hash"
                 className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:ring-[#0066ff]"
               />
             </div>
