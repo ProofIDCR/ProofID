@@ -101,9 +101,12 @@ export const getCertificateDetails = async (
   const certIdVal = StellarSDK.nativeToScVal(certId, { type: "string" });
 
   const contract = new StellarSDK.Contract(contractId);
-  const result = await contract.call(sorobanServer, "get_certificate_details", [
-    certIdVal,
-  ]);
+  const result = await contract.call({
+    method: "get_certificate_details",
+    args: [certIdVal],
+    server: sorobanServer,
+    networkPassphrase: StellarSDK.Networks.TESTNET,
+  });
 
   const details = StellarSDK.scValToNative(result) as {
     owner: StellarSDK.Address;
@@ -135,10 +138,12 @@ export const verifyCertificate = async (
   const hashVal = StellarSDK.nativeToScVal(metadataHash, { type: "string" });
 
   const contract = new StellarSDK.Contract(contractId);
-  const result = await contract.call(sorobanServer, "verify_certificate", [
-    certIdVal,
-    hashVal,
-  ]);
+  const result = await contract.call({
+    method: "verify_certificate",
+    args: [certIdVal, hashVal],
+    server: sorobanServer,
+    networkPassphrase: StellarSDK.Networks.TESTNET,
+  });
 
   return StellarSDK.scValToNative(result) as boolean;
 };

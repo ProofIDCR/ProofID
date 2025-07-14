@@ -92,6 +92,15 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
+            <Link href="/verify">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-purple-200 text-purple-700 hover:bg-purple-50 px-8 py-3 text-base font-semibold rounded-xl"
+              >
+                Verify Credential
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="lg"
