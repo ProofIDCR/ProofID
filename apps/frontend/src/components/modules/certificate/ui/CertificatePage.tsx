@@ -12,6 +12,7 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 import { issueCertificateOnChain } from "@/components/modules/certificate/services/certificate.service";
 import { CertificateCard } from "./CertificateCard";
 import StarsBackground from "../../background/StarsBackground";
+import { toast } from "sonner";
 
 interface ContractCertificate {
   id: string;
@@ -44,7 +45,7 @@ export default function CredentialDashboard() {
   const issueCertificate = async () => {
     setError(null);
     if (!address) {
-      console.warn("⚠️ Wallet not connected. Attempting to connect...");
+      toast.warning("⚠️ Wallet not connected. Attempting to connect...");
       await handleConnect();
       return;
     }
@@ -67,7 +68,7 @@ export default function CredentialDashboard() {
       setCertificate(issued);
       setForm({ certId: "", owner: "", metadataHash: "" });
     } catch (e: unknown) {
-      console.error("❌ An error occurred while issuing the certificate:", e);
+      toast.error("❌ An error occurred while issuing the certificate");
       if (
         e &&
         typeof e === "object" &&

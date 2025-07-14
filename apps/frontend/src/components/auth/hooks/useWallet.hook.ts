@@ -1,6 +1,7 @@
 import { ISupportedWallet } from "@creit.tech/stellar-wallets-kit";
 import { useGlobalAuthenticationStore } from "@/components/auth/store/data";
 import { kit } from "@/components/auth/constant/walletkit";
+import { toast } from "sonner";
 
 export const useWallet = () => {
   const { connectWalletStore, disconnectWalletStore } =
@@ -28,8 +29,8 @@ export const useWallet = () => {
   const handleConnect = async () => {
     try {
       await connectWallet();
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
+    } catch {
+      toast.error("Error connecting wallet");
     }
   };
 
@@ -38,11 +39,10 @@ export const useWallet = () => {
       if (disconnectWallet) {
         await disconnectWallet();
       }
-    } catch (error) {
-      console.error("Error disconnecting wallet:", error);
+    } catch {
+      toast.error("Error disconnecting wallet");
     }
   };
-
 
   return {
     handleConnect,
