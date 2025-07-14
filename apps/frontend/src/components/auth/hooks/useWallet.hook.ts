@@ -29,7 +29,7 @@ export const useWallet = () => {
   const handleConnect = async () => {
     try {
       await connectWallet();
-    } catch (error) {
+    } catch {
       toast.error("Error connecting wallet");
     }
   };
@@ -39,11 +39,10 @@ export const useWallet = () => {
       if (disconnectWallet) {
         await disconnectWallet();
       }
-    } catch (error) {
+    } catch {
       toast.error("Error disconnecting wallet");
     }
   };
-
 
   return {
     handleConnect,
