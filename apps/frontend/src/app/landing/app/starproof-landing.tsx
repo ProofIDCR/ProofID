@@ -1,11 +1,57 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Clock, Lock, Satellite, Check } from "lucide-react"
+import { Clock, Lock, Satellite, Check, RefreshCw } from "lucide-react"
 import Image from "next/image"
+import { memo } from "react"
+
+const StarsBackground = memo(() => {
+  const stars = useMemo(() => {
+    return Array.from({ length: 120 }, (_, i) => ({
+      id: i,
+      size: Math.random() * 2.5 + 2, // 2px a 4.5px
+      initialX: Math.random() * 120 - 10, // -10% a 110%
+      initialY: Math.random() * 120 - 20, // -20% a 100%
+      duration: Math.random() * 12 + 8, // 8s a 20s
+      delay: Math.random() * 20, // delay hasta 20s
+      opacity: Math.random() * 0.7 + 0.3, // 0.3 a 1
+    }))
+  }, [])
+
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {stars.map((star) => (
+        <motion.div
+          key={star.id}
+          className="absolute bg-white rounded-full"
+          style={{
+            width: star.size,
+            height: star.size,
+            left: `${star.initialX}%`,
+            top: `${star.initialY}%`,
+          }}
+          animate={{
+            x: [0, -window.innerWidth * 1.2],
+            y: [0, window.innerHeight * 1.2],
+            opacity: [0, star.opacity, star.opacity, 0],
+          }}
+          transition={{
+            duration: star.duration,
+            delay: star.delay,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: "loop",
+            ease: "linear",
+          }}
+        />
+      ))}
+    </div>
+  )
+})
+
+StarsBackground.displayName = "StarsBackground"
 
 export default function StarProofLanding() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -55,32 +101,7 @@ export default function StarProofLanding() {
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Animated Stars Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            x: [0, -100, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "linear",
-          }}
-          className="absolute inset-0"
-        >
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-white rounded-full opacity-60"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 4}s`,
-              }}
-            />
-          ))}
-        </motion.div>
-      </div>
+      <StarsBackground />
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center">
@@ -228,7 +249,9 @@ export default function StarProofLanding() {
             >
               <div className="w-80 h-80 rounded-2xl bg-gradient-to-br from-[#0066ff]/20 to-[#7b4dff]/20 backdrop-blur-sm border border-gray-700 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">🔄</div>
+                  <div className="mb-4 flex justify-center">
+                    <RefreshCw className="w-16 h-16 text-[#0066ff]" />
+                  </div>
                   <div className="text-lg text-gray-300">JSON → Hash</div>
                   <div className="text-sm text-gray-500 mt-2">Credential Transformation</div>
                 </div>
