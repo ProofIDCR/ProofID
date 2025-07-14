@@ -2,23 +2,81 @@
 
 ## Overview
 
-The Certificate smart contract is the core component of the StarProof platform, enabling the issuance, verification, and revocation of digital certificates on the Stellar blockchain using Soroban. This contract is WebAssembly-compatible and implements proper authentication mechanisms for secure certificate management.
+The StarProof Certificate Contract is a Soroban-based smart contract deployed on the Stellar blockchain that provides a secure, transparent, and immutable system for digital certificate management. This contract serves as the core infrastructure for the StarProof platform, enabling organizations to issue, verify, and manage cryptographically secured digital credentials with full auditability and tamper resistance.
+
+## General Features
+
+- **Decentralized Certificate Management**: Issue and manage certificates on the Stellar blockchain without reliance on centralized authorities
+- **Immutable Record Keeping**: All certificate issuances and status changes are permanently recorded on the blockchain
+- **Role-Based Access Control**: Administrative functions are protected by robust authorization mechanisms
+- **Certificate Verification**: On-chain verification of certificate authenticity and validity status
+- **WebAssembly Compatibility**: Optimized for deployment on Stellar's Soroban WebAssembly runtime
+- **Standards Compliance**: Follows Soroban SDK best practices and patterns
+
+## Functionalities
+
+### Core Operations
+- Certificate issuance with unique identifiers
+- Certificate verification against stored metadata
+- Certificate revocation by authorized administrators
+- Certificate status querying
+- Listing of all issued certificates
+
+### Administrative Controls
+- Contract initialization with administrator designation
+- Strict access control for sensitive operations
+- Validation of certificate uniqueness and data integrity
 
 ## Contract Structure
 
-The contract is implemented in Rust using the Soroban SDK and consists of:
+The contract is architected using Rust and the Soroban SDK with the following key components:
 
-- A `Contract` struct that serves as the main contract entity
-- A `CertificateDetails` struct with the `#[contracttype]` attribute for serialization
-- Storage maps for certificates and administrator access using Soroban's persistent storage
-- Functions for certificate lifecycle management with proper authentication
+### Data Structures
+
+```rust
+#[contracttype]
+pub struct CertificateDetails {
+    pub owner: Address,
+    pub metadata_hash: String,
+    pub is_valid: bool,
+}
+```
+
+### Storage Keys
+
+```rust
+const ADMIN: Symbol = symbol_short!("ADMIN");
+const CERTIFICATES: Symbol = symbol_short!("CERTS");
+```
+
+### Error Handling
+
+```rust
+#[contracterror]
+pub enum Error {
+    Unauthorized = 1,
+    CertificateAlreadyExists = 2,
+    CertificateNotFound = 3,
+    AlreadyInitialized = 4
+}
+```
+
+## Events
+
+The contract does not explicitly emit events, as Soroban's transaction records provide inherent auditability. All state changes are recorded on the Stellar blockchain and can be queried through the following operations:
+
+- Certificate issuance events (tracked through contract state changes)
+- Certificate revocation events (tracked through validity status changes)
+- Administrative actions (tracked through transaction records)
 
 ## Functions
 
-### `initialize(env: Env, admin: Address) -> Result<(), Error>`
+### Administrative Functions
+
+#### `initialize(env: Env, admin: Address) -> Result<(), Error>`
 
 **Description:**  
-Initializes the contract with the administrator address. This can only be called once when the contract is first deployed.
+Initializes the contract with the administrator address. This function can only be called once when the contract is first deployed.
 
 **Parameters:**
 - `env`: The Soroban environment object
@@ -27,24 +85,33 @@ Initializes the contract with the administrator address. This can only be called
 **Returns:**  
 A Result indicating success or an error if initialization fails (Error::AlreadyInitialized)
 
-### `issue_certificate(env: Env, cert_id: String, owner: Address, metadata_hash: String) -> Result<(), Error>`
+**Access Control:**  
+No specific authorization required, but can only be called once
+
+#### `issue_certificate(env: Env, cert_id: String, owner: Address, metadata_hash: String) -> Result<(), Error>`
 
 **Description:**  
-Registers a new certificate with the provided details. Only the administrator can issue certificates. The function requires authentication from the admin address using `require_auth()`.
+Registers a new certificate with the provided details. Creates a permanent record of the certificate on the blockchain with its associated metadata hash and sets it as valid.
 
 **Parameters:**
 - `env`: The Soroban environment object
 - `cert_id`: A unique identifier for the certificate
 - `owner`: The Stellar address of the certificate recipient
-- `metadata_hash`: A hash of the certificate's metadata for verification
+- `metadata_hash`: A cryptographic hash of the certificate's metadata for verification
 
 **Returns:**  
 A Result indicating success or an error if the certificate already exists (Error::CertificateAlreadyExists) or the caller is not the administrator (Error::Unauthorized)
 
-### `revoke_certificate(env: Env, cert_id: String) -> Result<(), Error>`
+**Access Control:**  
+Restricted to the administrator address. Requires authentication via `admin.require_auth()`
+
+**Storage Impact:**  
+Creates a new entry in the certificates map with the provided certificate ID as the key
+
+#### `revoke_certificate(env: Env, cert_id: String) -> Result<(), Error>`
 
 **Description:**  
-Marks a certificate as revoked. Only the administrator can revoke certificates. The function requires authentication from the admin address using `require_auth()`.
+Marks a certificate as revoked by setting its validity status to false. The certificate record remains on the blockchain but is flagged as invalid.
 
 **Parameters:**
 - `env`: The Soroban environment object
@@ -53,10 +120,18 @@ Marks a certificate as revoked. Only the administrator can revoke certificates. 
 **Returns:**  
 A Result indicating success or an error if the certificate doesn't exist (Error::CertificateNotFound) or the caller is not the administrator (Error::Unauthorized)
 
-### `get_certificate_details(env: Env, cert_id: String) -> Result<CertificateDetails, Error>`
+**Access Control:**  
+Restricted to the administrator address. Requires authentication via `admin.require_auth()`
+
+**Storage Impact:**  
+Updates the existing certificate record by changing the `is_valid` flag to false
+
+### Query Functions
+
+#### `get_certificate_details(env: Env, cert_id: String) -> Result<CertificateDetails, Error>`
 
 **Description:**  
-Retrieves the details of a certificate. This function is public and can be called by anyone.
+Retrieves the complete details of a certificate including owner address, metadata hash, and validity status.
 
 **Parameters:**
 - `env`: The Soroban environment object
@@ -65,55 +140,116 @@ Retrieves the details of a certificate. This function is public and can be calle
 **Returns:**  
 A Result containing the certificate details (owner, metadata hash, and validity status) or an error if the certificate doesn't exist (Error::CertificateNotFound)
 
-## Data Storage
+**Access Control:**  
+Public function, can be called by any address
 
-Certificates are stored in a map with the following structure:
+#### `verify_certificate(env: Env, cert_id: String, metadata_hash: String) -> Result<bool, Error>`
+
+**Description:**  
+Verifies if a certificate exists, is valid, and matches the provided metadata hash.
+
+**Parameters:**
+- `env`: The Soroban environment object
+- `cert_id`: The unique identifier of the certificate to verify
+- `metadata_hash`: The metadata hash to verify against the stored certificate
+
+**Returns:**  
+A Result containing a boolean (true if the certificate is valid and the hash matches) or an error if the certificate doesn't exist (Error::CertificateNotFound)
+
+**Access Control:**  
+Public function, can be called by any address
+
+#### `list_certificates(env: Env) -> Vec<String>`
+
+**Description:**  
+Retrieves a list of all certificate IDs that have been issued.
+
+**Parameters:**
+- `env`: The Soroban environment object
+
+**Returns:**  
+A vector containing all certificate IDs stored in the contract
+
+**Access Control:**  
+Public function, can be called by any address
+
+## Technical Details
+
+### Storage Implementation
+
+The contract uses Soroban's persistent storage with the following structure:
+
 ```rust
-// Storage keys
-const ADMIN: Symbol = symbol_short!("ADMIN");
-const CERTIFICATES: Symbol = symbol_short!("CERTS");
+// Admin storage - Stores the administrator address
+env.storage().instance().set(&ADMIN, &admin);
+env.storage().instance().get(&ADMIN);
 
-// Certificate details structure
+// Certificates storage - Map of certificate IDs to certificate details
+let certificates = env.storage().instance().get_map(&CERTIFICATES);
+certificates.set(&cert_id, &certificate_details);
+certificates.get(&cert_id);
+```
+
+### Serialization
+
+The contract uses Soroban's serialization framework for data storage and retrieval:
+
+```rust
+// The #[contracttype] attribute enables serialization/deserialization
 #[contracttype]
 pub struct CertificateDetails {
     pub owner: Address,
     pub metadata_hash: String,
     pub is_valid: bool,
 }
-
-// Storage implementation
-env.storage().instance().set(&ADMIN, &admin);
-env.storage().instance().get(&CERTIFICATES).get(&cert_id);
 ```
 
-Where:
-- `ADMIN`: Storage key for the administrator address
-- `CERTIFICATES`: Storage key for the certificates map
-- `CertificateDetails`: Structure containing certificate information
-  - `owner`: The Stellar address of the certificate recipient
-  - `metadata_hash`: A hash of the certificate's metadata
-  - `is_valid`: Certificate validity status (true for valid, false for revoked)
+### Error Handling
 
-## Security Considerations
+Errors are handled through a dedicated error enum with specific error codes:
 
-- Access control is implemented using Soroban's `require_auth()` mechanism to ensure only the administrator can issue and revoke certificates
-- Authentication is enforced for all sensitive operations (issuance and revocation)
-- Certificate IDs must be unique to prevent overwriting existing certificates
-- The contract validates inputs to prevent malformed data
-- The contract is WebAssembly-compatible for deployment on the Stellar blockchain
+```rust
+#[contracterror]
+pub enum Error {
+    Unauthorized = 1,         // Caller is not the administrator
+    CertificateAlreadyExists = 2,  // Certificate ID already in use
+    CertificateNotFound = 3,   // Certificate ID does not exist
+    AlreadyInitialized = 4     // Contract has already been initialized
+}
+```
 
-## Integration with StarProof Platform
+## Implementation Notes
 
-This contract is designed to be called from the StarProof web interface, which provides forms for certificate issuance, verification, and revocation. The web interface handles the complexity of blockchain interactions, making the system accessible to non-technical users.
+### Authentication Model
 
-## Testing
+The contract implements a single-administrator model where one Stellar address has privileged access to administrative functions. This address is set during contract initialization and cannot be changed afterward without redeploying the contract.
 
-The contract includes comprehensive unit tests that verify:
-- Proper initialization
-- Certificate issuance and retrieval
-- Certificate verification against metadata hashes
-- Certificate revocation
-- Access control for administrative functions
-- Error handling for various edge cases
+Authentication is enforced using Soroban's `require_auth()` mechanism, which verifies that transaction signatures match the expected administrator address.
 
-Tests use Soroban's testing utilities, including authorization mocking with `env.mock_all_auths()` to simulate proper authentication.
+### Performance Considerations
+
+- Certificate lookups are optimized using Soroban's map data structure for O(1) access time
+- The contract minimizes storage operations to reduce execution costs
+- Certificate IDs are stored as strings to provide flexibility and human-readability
+- The `list_certificates` function may have higher gas costs as the number of certificates grows
+
+### Upgrade Path
+
+The current contract does not implement an upgrade mechanism. Future versions could incorporate:
+
+- Contract migration capabilities
+- Multi-administrator support
+- Delegated certificate issuance
+- Batch operations for certificate management
+
+### Integration Guidelines
+
+Client applications should:
+
+1. Connect to a Soroban-compatible Stellar node
+2. Use the contract ID to interact with certificate functions
+3. Ensure proper authentication when calling administrative functions
+4. Handle potential errors gracefully, especially for certificate existence checks
+5. Store off-chain metadata securely, with only the hash recorded on-chain
+
+The StarProof web interface abstracts these complexities, providing a user-friendly experience for certificate management.
