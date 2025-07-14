@@ -19,7 +19,6 @@ import Link from "next/link";
 import { useGlobalAuthenticationStore } from "@/components/auth/store/data";
 
 export default function HomePage() {
-
   const [isVisible, setIsVisible] = useState(false);
 
   const { handleConnect, handleDisconnect } = useWallet();
@@ -36,8 +35,9 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-purple-50/20" />
 
         <div
-          className={`relative z-10 text-center max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
+          className={`relative z-10 text-center max-w-4xl mx-auto transition-all duration-1000 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
         >
           <Badge className="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-200 px-4 py-2 text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4 mr-2" />

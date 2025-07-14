@@ -5,12 +5,32 @@ import { WalletNetwork } from "@creit.tech/stellar-wallets-kit";
 import {
   buildCertificateInvokeOperation,
   buildCertificateTransaction,
-  signAndSubmitCertificateTx,
-} from "@/components/lib/stellar"
+} from "@/components/lib/stellar";
 
-import { CertificateData, ContractCertificate } from "../types/certificates.types";
+import {
+  CertificateData,
+  ContractCertificate,
+} from "../types/certificates.types";
 import { sorobanServer } from "@/components/core/config/stellar/stellar";
 
+/**
+ * Enviar transacción firmada por Freighter
+ */
+async function submitSignedTransactionXdr(
+  signedXdr: string,
+  networkPassphrase: string,
+  server: StellarSDK.SorobanRpc.Server
+) {
+  const tx = StellarSDK.TransactionBuilder.fromXDR(
+    signedXdr,
+    networkPassphrase
+  );
+  return server.sendTransaction(tx);
+}
+
+/**
+ * Emite un certificado en la blockchain usando el contrato Soroban actualizado
+ */
 export const issueCertificateOnChain = async (
   certData: CertificateData
 ): Promise<ContractCertificate> => {
@@ -26,7 +46,9 @@ export const issueCertificateOnChain = async (
   const certIdVal = StellarSDK.nativeToScVal(certData.certificateId, {
     type: "string",
   });
+
   const ownerVal = new StellarSDK.Address(certData.metadata.to).toScVal();
+
   const metadataHashVal = StellarSDK.nativeToScVal(
     certData.metadata.certificateHash,
     { type: "string" }
@@ -39,22 +61,19 @@ export const issueCertificateOnChain = async (
     [certIdVal, ownerVal, metadataHashVal]
   );
 
-  // Build transaction
   const transaction = buildCertificateTransaction(account, [operation]);
 
-  // Prepare and sign
   const preparedTx = await sorobanServer.prepareTransaction(transaction);
+
   const { signedTxXdr } = await signTransaction(preparedTx.toXDR(), {
     address: certData.issuerAddress,
     networkPassphrase: WalletNetwork.TESTNET,
   });
 
-  // Send and wait for confirmation
-  await signAndSubmitCertificateTx(
-    preparedTx,
-    StellarSDK.Keypair.fromPublicKey(certData.issuerAddress), // For type compatibility only
-    sorobanServer,
-    false // Already prepared, no need to re-prepare
+  await submitSignedTransactionXdr(
+    signedTxXdr,
+    WalletNetwork.TESTNET,
+    sorobanServer
   );
 
   return {
