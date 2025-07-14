@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import * as StellarSDK from "@stellar/stellar-sdk";
 
 /**
@@ -32,18 +31,10 @@ export function buildCertificateTransaction(
  */
 export function buildCertificateInvokeOperation(
   contractAddress: string,
-  wasmHash: string,
+  _wasmHash: string,
   entrypoint: string,
   args: StellarSDK.xdr.ScVal[]
 ): StellarSDK.xdr.Operation {
-  const wasmHashVal = StellarSDK.nativeToScVal(Buffer.from(wasmHash, "hex"), {
-    type: "bytes",
-  });
-
-  const saltVal = StellarSDK.nativeToScVal(Buffer.from(randomBytes(32)), {
-    type: "bytes",
-  });
-
   const operation = StellarSDK.Operation.invokeHostFunction({
     auth: [],
     func: StellarSDK.xdr.HostFunction.hostFunctionTypeInvokeContract(

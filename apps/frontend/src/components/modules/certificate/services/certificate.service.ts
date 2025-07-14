@@ -14,7 +14,7 @@ import {
 import { sorobanServer } from "@/components/core/config/stellar/stellar";
 
 /**
- * Enviar transacción firmada por Freighter
+ * Send a transaction signed by Freighter
  */
 async function submitSignedTransactionXdr(
   signedXdr: string,
@@ -29,7 +29,7 @@ async function submitSignedTransactionXdr(
 }
 
 /**
- * Emite un certificado en la blockchain usando el contrato Soroban actualizado
+ * Issue a certificate on the blockchain using the updated Soroban contract
  */
 export const issueCertificateOnChain = async (
   certData: CertificateData

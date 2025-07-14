@@ -1,25 +1,25 @@
 export interface CertificateMetadata {
-    to: string // Dirección del destinatario (usuario)
-    action: string // Acción ejecutada en el contrato (e.g. CERTIFICATE_ISSUANCE)
+    to: string // Recipient address
+    action: string // Action executed in the contract (e.g. CERTIFICATE_ISSUANCE)
     expires: boolean
     expirationDate?: string
     certificateHash: string
-    blockchainTxId?: string // ID de la transacción en blockchain
+    blockchainTxId?: string // Blockchain transaction ID
   }
   
   export interface CertificateData {
-    // Información general del certificado
+    // General certificate information
     certificateId: string
     certificateType: string
     issueDate: string
     description: string
   
-    // Datos del emisor
+    // Issuer data
     issuerName: string
-    issuerAddress: string // Dirección blockchain
+    issuerAddress: string // Blockchain address
     issuerContact: string
   
-    // Metadatos de contrato
+    // Contract metadata
     metadata: CertificateMetadata
   }
   

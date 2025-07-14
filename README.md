@@ -5,7 +5,7 @@
 > **Verifiable credentials on Stellar with dynamic on-chain and off-chain badges**
 
 Prototype MVP that lets issuers mint Verifiable Credentials (VCs) and dynamic badges backed by the Stellar blockchain.  
-_(The section **“Propuestas para hacer StarProof más innovador”** is intentionally omitted for now)._
+_(The section **"Proposals to make StarProof more innovative"** is intentionally omitted for now)._ 
 
 ---
 
